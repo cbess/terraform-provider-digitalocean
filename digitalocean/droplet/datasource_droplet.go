@@ -45,7 +45,7 @@ func DataSourceDigitalOceanDroplet() *schema.Resource {
 	}
 }
 
-func dataSourceDigitalOceanDropletRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceDigitalOceanDropletRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*config.CombinedConfig).GodoClient()
 
 	var foundDroplet godo.Droplet
@@ -71,7 +71,7 @@ func dataSourceDigitalOceanDropletRead(ctx context.Context, d *schema.ResourceDa
 		foundDroplet = *droplet
 	} else if v, ok := d.GetOk("name"); ok {
 		gpus := d.Get("gpu").(bool)
-		extra := make(map[string]interface{})
+		extra := make(map[string]any)
 		if gpus {
 			extra["gpus"] = true
 		}
@@ -105,7 +105,7 @@ func dataSourceDigitalOceanDropletRead(ctx context.Context, d *schema.ResourceDa
 	return nil
 }
 
-func findDropletByName(droplets []interface{}, name string) (*godo.Droplet, error) {
+func findDropletByName(droplets []any, name string) (*godo.Droplet, error) {
 	results := make([]godo.Droplet, 0)
 	for _, v := range droplets {
 		droplet := v.(godo.Droplet)
@@ -122,7 +122,7 @@ func findDropletByName(droplets []interface{}, name string) (*godo.Droplet, erro
 	return nil, fmt.Errorf("too many droplets found with name %s (found %d, expected 1)", name, len(results))
 }
 
-func findDropletByTag(droplets []interface{}, tag string) (*godo.Droplet, error) {
+func findDropletByTag(droplets []any, tag string) (*godo.Droplet, error) {
 	results := make([]godo.Droplet, 0)
 	for _, d := range droplets {
 		droplet := d.(godo.Droplet)
