@@ -66,7 +66,7 @@ func ResourceDigitalOceanDroplet() *schema.Resource {
 				Optional: true,
 				Computed: true,
 				ForceNew: true,
-				StateFunc: func(val interface{}) string {
+				StateFunc: func(val any) string {
 					// DO API V2 region slug is always lowercase
 					return strings.ToLower(val.(string))
 				},
@@ -76,7 +76,7 @@ func ResourceDigitalOceanDroplet() *schema.Resource {
 			"size": {
 				Type:     schema.TypeString,
 				Required: true,
-				StateFunc: func(val interface{}) string {
+				StateFunc: func(val any) string {
 					// DO API V2 size slug is always lowercase
 					return strings.ToLower(val.(string))
 				},
@@ -266,17 +266,17 @@ func ResourceDigitalOceanDroplet() *schema.Resource {
 			// in another resource such as a domain record, e.g.:
 			// https://github.com/digitalocean/terraform-provider-digitalocean/issues/981
 			customdiff.IfValueChange("ipv6",
-				func(ctx context.Context, old, new, meta interface{}) bool {
+				func(ctx context.Context, old, new, meta any) bool {
 					return !old.(bool) && new.(bool)
 				},
-				customdiff.ComputedIf("ipv6_address", func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
+				customdiff.ComputedIf("ipv6_address", func(ctx context.Context, d *schema.ResourceDiff, meta any) bool {
 					return d.Get("ipv6").(bool)
 				}),
 			),
 			// Forces replacement when IPv6 has attribute changes to `false`
 			// https://github.com/digitalocean/terraform-provider-digitalocean/issues/1104
 			customdiff.ForceNewIfChange("ipv6",
-				func(ctx context.Context, old, new, meta interface{}) bool {
+				func(ctx context.Context, old, new, meta any) bool {
 					return old.(bool) && !new.(bool)
 				},
 			),
@@ -284,7 +284,7 @@ func ResourceDigitalOceanDroplet() *schema.Resource {
 	}
 }
 
-func resourceDigitalOceanDropletCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceDigitalOceanDropletCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*config.CombinedConfig).GodoClient()
 
 	image := d.Get("image").(string)
@@ -398,7 +398,7 @@ func resourceDigitalOceanDropletCreate(ctx context.Context, d *schema.ResourceDa
 	return nil
 }
 
-func resourceDigitalOceanDropletRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceDigitalOceanDropletRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*config.CombinedConfig).GodoClient()
 
 	id, err := strconv.Atoi(d.Id())
@@ -475,7 +475,7 @@ func setDropletAttributes(d *schema.ResourceData, droplet *godo.Droplet) error {
 	return nil
 }
 
-func resourceDigitalOceanDropletImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceDigitalOceanDropletImport(d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 	// Retrieve the image from API during import
 	client := meta.(*config.CombinedConfig).GodoClient()
 	id, err := strconv.Atoi(d.Id())
@@ -522,7 +522,7 @@ func FindIPv4AddrByType(d *godo.Droplet, addrType string) string {
 	return ""
 }
 
-func resourceDigitalOceanDropletUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceDigitalOceanDropletUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*config.CombinedConfig).GodoClient()
 	var warnings []diag.Diagnostic
 
@@ -730,7 +730,7 @@ func resourceDigitalOceanDropletUpdate(ctx context.Context, d *schema.ResourceDa
 
 	if d.HasChange("volume_ids") {
 		oldIDs, newIDs := d.GetChange("volume_ids")
-		newSet := func(ids []interface{}) map[string]struct{} {
+		newSet := func(ids []any) map[string]struct{} {
 			out := make(map[string]struct{}, len(ids))
 			for _, id := range ids {
 				out[id.(string)] = struct{}{}
@@ -776,7 +776,7 @@ func resourceDigitalOceanDropletUpdate(ctx context.Context, d *schema.ResourceDa
 	return warnings
 }
 
-func resourceDigitalOceanDropletDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceDigitalOceanDropletDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*config.CombinedConfig).GodoClient()
 
 	id, err := strconv.Atoi(d.Id())
@@ -838,7 +838,7 @@ func resourceDigitalOceanDropletDelete(ctx context.Context, d *schema.ResourceDa
 	return nil
 }
 
-func waitForDropletDestroy(ctx context.Context, d *schema.ResourceData, meta interface{}) (interface{}, error) {
+func waitForDropletDestroy(ctx context.Context, d *schema.ResourceData, meta any) (any, error) {
 	log.Printf("[INFO] Waiting for droplet (%s) to be destroyed", d.Id())
 
 	stateConf := &retry.StateChangeConf{
@@ -854,7 +854,7 @@ func waitForDropletDestroy(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func waitForDropletAttribute(
-	ctx context.Context, d *schema.ResourceData, target string, pending []string, attribute string, timeoutKey string, meta interface{}) (interface{}, error) {
+	ctx context.Context, d *schema.ResourceData, target string, pending []string, attribute string, timeoutKey string, meta any) (any, error) {
 	// Wait for the droplet so we can get the networking attributes
 	// that show up after a while
 	log.Printf(
@@ -881,9 +881,9 @@ func waitForDropletAttribute(
 // TODO This function still needs a little more refactoring to make it
 // cleaner and more efficient
 func dropletStateRefreshFunc(
-	ctx context.Context, d *schema.ResourceData, attribute string, meta interface{}) retry.StateRefreshFunc {
+	ctx context.Context, d *schema.ResourceData, attribute string, meta any) retry.StateRefreshFunc {
 	client := meta.(*config.CombinedConfig).GodoClient()
-	return func() (interface{}, string, error) {
+	return func() (any, string, error) {
 		id, err := strconv.Atoi(d.Id())
 		if err != nil {
 			return nil, "", err
@@ -923,7 +923,7 @@ func dropletStateRefreshFunc(
 }
 
 // Powers on the droplet and waits for it to be active
-func powerOnAndWait(ctx context.Context, d *schema.ResourceData, meta interface{}) error {
+func powerOnAndWait(ctx context.Context, d *schema.ResourceData, meta any) error {
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return fmt.Errorf("invalid droplet id: %v", err)
@@ -945,7 +945,7 @@ func powerOnAndWait(ctx context.Context, d *schema.ResourceData, meta interface{
 }
 
 // Detach volumes from droplet
-func detachVolumesFromDroplet(d *schema.ResourceData, meta interface{}) error {
+func detachVolumesFromDroplet(d *schema.ResourceData, meta any) error {
 	var errors []error
 	if attr, ok := d.GetOk("volume_ids"); ok {
 		errors = make([]error, 0, attr.(*schema.Set).Len())
@@ -964,7 +964,7 @@ func detachVolumesFromDroplet(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func detachVolumeIDOnDroplet(d *schema.ResourceData, volumeID string, meta interface{}) error {
+func detachVolumeIDOnDroplet(d *schema.ResourceData, volumeID string, meta any) error {
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return fmt.Errorf("invalid droplet id: %v", err)
@@ -991,7 +991,7 @@ func containsDigitalOceanDropletFeature(features []string, name string) bool {
 	return false
 }
 
-func expandSshKeys(sshKeys []interface{}) ([]godo.DropletCreateSSHKey, error) {
+func expandSshKeys(sshKeys []any) ([]godo.DropletCreateSSHKey, error) {
 	expandedSshKeys := make([]godo.DropletCreateSSHKey, len(sshKeys))
 	for i, s := range sshKeys {
 		sshKey := s.(string)
@@ -1010,7 +1010,7 @@ func expandSshKeys(sshKeys []interface{}) ([]godo.DropletCreateSSHKey, error) {
 }
 
 func flattenDigitalOceanDropletVolumeIds(volumeids []string) *schema.Set {
-	flattenedVolumes := schema.NewSet(schema.HashString, []interface{}{})
+	flattenedVolumes := schema.NewSet(schema.HashString, []any{})
 	for _, v := range volumeids {
 		flattenedVolumes.Add(v)
 	}
@@ -1018,14 +1018,14 @@ func flattenDigitalOceanDropletVolumeIds(volumeids []string) *schema.Set {
 	return flattenedVolumes
 }
 
-func expandBackupPolicy(v interface{}) (*godo.DropletBackupPolicyRequest, error) {
+func expandBackupPolicy(v any) (*godo.DropletBackupPolicyRequest, error) {
 	var policy godo.DropletBackupPolicyRequest
-	policyList := v.([]interface{})
+	policyList := v.([]any)
 
 	for _, rawPolicy := range policyList {
-		policyMap, ok := rawPolicy.(map[string]interface{})
+		policyMap, ok := rawPolicy.(map[string]any)
 		if !ok {
-			return nil, fmt.Errorf("droplet backup policy type assertion failed: expected map[string]interface{}, got %T", rawPolicy)
+			return nil, fmt.Errorf("droplet backup policy type assertion failed: expected map[string]any, got %T", rawPolicy)
 		}
 
 		planVal, exists := policyMap["plan"]
