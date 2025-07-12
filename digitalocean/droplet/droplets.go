@@ -115,7 +115,7 @@ func dropletSchema() map[string]*schema.Schema {
 	}
 }
 
-func getDigitalOceanDroplets(meta interface{}, extra map[string]interface{}) ([]interface{}, error) {
+func getDigitalOceanDroplets(meta any, extra map[string]any) ([]any, error) {
 	client := meta.(*config.CombinedConfig).GodoClient()
 
 	gpus, _ := extra["gpus"].(bool)
@@ -125,7 +125,7 @@ func getDigitalOceanDroplets(meta interface{}, extra map[string]interface{}) ([]
 		PerPage: 200,
 	}
 
-	var dropletList []interface{}
+	var dropletList []any
 
 	for {
 		var (
@@ -162,10 +162,10 @@ func getDigitalOceanDroplets(meta interface{}, extra map[string]interface{}) ([]
 	return dropletList, nil
 }
 
-func flattenDigitalOceanDroplet(rawDroplet, meta interface{}, extra map[string]interface{}) (map[string]interface{}, error) {
+func flattenDigitalOceanDroplet(rawDroplet, meta any, extra map[string]any) (map[string]any, error) {
 	droplet := rawDroplet.(godo.Droplet)
 
-	flattenedDroplet := map[string]interface{}{
+	flattenedDroplet := map[string]any{
 		"id":            droplet.ID,
 		"name":          droplet.Name,
 		"urn":           droplet.URN(),
